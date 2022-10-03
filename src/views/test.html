@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <title>socket.io test page</title>
+    <style>
+      ul.list {
+        width: 100%;
+        display: block;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+      ul.list > li.item {
+        list-style-type: none;
+        margin: 6px;
+        padding: 4px;
+        box-sizing: border-box;
+        position: relative;
+        border: 1px solid #ccc;
+      }
+    </style>
+    <script type="module">
+      import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js";
+
+      let socket;
+
+      window.socketConnectionStart = function(event) {
+        const roomSelectElement = event.parentElement.querySelector('.room_select');
+        const selectedRoom = roomSelectElement.value;
+
+        socket = io(`ws://localhost:3000/`, {
+          transports: ['websocket'],
+          reconnectionDelayMax: 10000,
+          auth: {
+            token: '123',
+          },
+          query: {
+            no: 1,
+            room: selectedRoom,
+          },
+        });
+
+        socket.io.on('error', (error) => {
+          console.log(`socket.io error`, error);
+        });
+
+        socket.io.on('reconnect', (attempt) => {
+          console.log(`socket.io reconnect`, attempt);
+        });
+
+        socket.io.on('close', (reason, description) => {
+          console.log(`socket.io close`, { reason, description });
+        });
+
+        socket.on('colorToggle', (result) => {
+          console.log(`colorToggle!!`, { result });
+        });
+      }
+
+      window.socketConnectionEnd = function(event) {
+        console.log('socketConnectionEnd.event', event);
+        socket.disconnect();
+      }
+
+      window.socketEventSend = function(event) {
+        console.log('socketEventSend.event', event);
+        const eventSelectElement = event.parentElement.querySelector('.event_select');
+        const selectedEvent = eventSelectElement.value;
+        socket?.emit(selectedEvent, { data: 'test...' });
+      }
+    </script>
+  </head>
+  <body>
+    <ul class="list">
+      <li class="item" data-index="0">
+        <div>
+          <span>
+            room : 
+          </span>
+          <select class="room_select">
+            <option value="ROOM_01">ROOM_01</option>
+            <option value="ROOM_02">ROOM_02</option>
+            <option value="ROOM_03">ROOM_03</option>
+          </select>
+          <button class="socket-connection-start-button" onclick="socketConnectionStart(this)">
+            소켓 연결 시작하기
+          </button>
+          <button class="socket-connection-end-button" onclick="socketConnectionEnd(this)">
+            소켓 연결 해제하기
+          </button>
+        </div>
+        <div>
+          <select class="event_select">
+            <option value="event-one">event-one</option>
+            <option value="event-two">event-two</option>
+            <option value="event-three">event-three</option>
+          </select>
+          <button class="socket-event-send-button" onclick="socketEventSend(this)">
+            소켓 이벤트 보내기
+          </button>
+        </div>
+      </li>
+    </ul>
+  </body>
+</html>
